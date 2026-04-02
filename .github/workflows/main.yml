@@ -22,7 +22,7 @@ jobs:
       - name: Build Process
         run: |
           npm init -y
-          # Install Capacitor + Asset Tool
+          # 1. Install the tool that handles icons
           npm install @capacitor/cli@latest @capacitor/core@latest @capacitor/android@latest @capacitor/assets
           
           mkdir -p www
@@ -31,12 +31,15 @@ jobs:
           npx cap init "Momentum" "com.harshitnimje.momentum" --web-dir www
           npx cap add android
           
-          # This command looks for icon.png and creates the Android icons automatically
+          # 2. Generate the icons (This creates the res/mipmap folders)
           if [ -f "icon.png" ]; then
             npx capacitor-assets generate --android
           fi
           
+          # 3. CRITICAL: Sync and Copy again to lock in the new icons
           npx cap sync android
+          npx cap copy android
+          
           cd android && ./gradlew assembleDebug --no-daemon
 
       - name: Upload Result
@@ -47,8 +50,10 @@ jobs:
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
+          tag_name: "latest-build"
+          name: "Latest Momentum Build"
+          body: "This is the latest automated build of your app."
           files: android/app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
