@@ -31,11 +31,17 @@ jobs:
           npx cap add android
           
           # UPDATE THE PATH HERE
-          if [ -f "assets/icon.png" ]; then
-            echo "✅ assets/icon.png detected. Forcing icon replacement..."
-            npx capacitor-assets generate --android --assetPath assets/icon.png
+          # Ensure assets exist
+          if [ -f "assets/icon-foreground.png" ] && [ -f "assets/icon-background.png" ]; then
+            echo "✅ Adaptive icon assets detected"
+          
+            rm -rf android/app/src/main/res
+          
+            npx capacitor-assets generate --android
+            npx cap sync android
+          
           else
-            echo "❌ ERROR: assets/icon.png not found!"
+            echo "❌ ERROR: Required adaptive icon files missing!"
             exit 1
           fi
           
