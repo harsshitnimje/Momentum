@@ -1,0 +1,11 @@
+{
+  "appId": "com.harshit.momentum",
+  "appName": "Momentum",
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#c0392b"
+    }
+  }
+}
