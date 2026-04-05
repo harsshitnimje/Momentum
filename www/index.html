@@ -170,6 +170,8 @@
       height: 56px;
       border-bottom: 2px solid var(--accent);
       transition: background 0.3s;
+      overscroll-behavior: none;
+      -webkit-overscroll-behavior: none;
     }
 
     .logo {
@@ -436,6 +438,8 @@
       left: 0;
       right: 0;
       z-index: 99;
+      overscroll-behavior: none;
+      -webkit-overscroll-behavior: none;
     }
 
     .tab {
@@ -535,17 +539,24 @@
 
     .view.active {
       display: block;
-      animation: viewIn 0.3s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+      opacity: 1;
     }
 
-    @keyframes viewIn {
+    /* stagger-item class is applied by JS on tab switch */
+    .stagger-item {
+      opacity: 0;
+      transform: translateY(10px);
+      animation: childFadeUp 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes childFadeUp {
       from {
         opacity: 0;
-        transform: translateY(16px) scale(0.98);
+        transform: translateY(10px);
       }
       to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
       }
     }
 
@@ -2031,7 +2042,7 @@
 
     .oh-xp-bar-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--gold), var(--accent2));
+      background: var(--accent);
       border-radius: 4px;
       transition: width 1s cubic-bezier(.34, 1.2, .64, 1);
     }
@@ -2677,7 +2688,7 @@
 
     .progress-bar-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      background: var(--accent);
       border-radius: 4px;
       transition: width 0.5s cubic-bezier(.4, 0, .2, 1);
     }
@@ -2912,7 +2923,7 @@
       margin-bottom: 2px;
       cursor: pointer;
       text-transform: uppercase;
-      color: var(--gold);
+      color: var(--accent);
     }
 
     .profile-name:hover::after {
@@ -3595,10 +3606,30 @@
       border-bottom: none;
     }
 
+    /* Animate the content inside details when it opens */
+    details[open] > *:not(summary) {
+      animation: detailsReveal 0.18s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    }
+
+    @keyframes detailsReveal {
+      from {
+        opacity: 0;
+        transform: translateY(-6px) scaleY(0.96);
+        transform-origin: top center;
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scaleY(1);
+        transform-origin: top center;
+      }
+    }
+
     summary {
       list-style: none;
       cursor: pointer;
       outline: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     summary::-webkit-details-marker {
@@ -3614,7 +3645,7 @@
       content: '↓';
       font-size: 0.8rem;
       opacity: 0.4;
-      transition: transform 0.2s;
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
       margin-left: auto;
     }
 
@@ -4884,8 +4915,8 @@
         <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
           <div
             style="width:52px;height:52px;border-radius:14px;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:1.5px solid var(--accent);">
-            <img src="assets/logo.png" alt="Momentum Logo" style="width:100%;height:100%;object-fit:cover;"
-              onerror="this.outerHTML='<span style=\'font-size:1.5rem\'>Ⓜ</span>'">
+            <img src="icon.png" alt="Momentum" style="width:100%;height:100%;object-fit:cover;display:block;"
+              onerror="this.src='assets/icon.png';this.onerror=function(){this.style.display='none';this.parentElement.innerHTML+='<span style=\'font-family:Bebas Neue,sans-serif;font-size:1.7rem;color:var(--accent);line-height:1\'>M</span>';}">
           </div>
           <div>
             <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.1em;color:var(--ink)">
@@ -5056,8 +5087,25 @@
       </div>
       <div class="form-field" style="margin-bottom: 1.5rem;">
         <label class="form-label">Daily Target (e.g. 8 glasses of water = 8)</label>
-        <input class="inp" type="number" id="hTarget" value="1" min="1" max="50" style="width:100%">
+        <input class="inp" type="number" id="hTarget" value="1" min="1" max="50" style="width:100%" oninput="toggleRecurringField()">
       </div>
+
+      <!-- Recurring interval — only shown when target > 1 -->
+      <div class="form-field" id="hRecurField" style="display:none; margin-bottom:1rem; background:var(--cream); border-radius:12px; padding:0.8rem 0.9rem; border:1.5px solid var(--border);">
+        <label class="form-label" style="margin-bottom:0.5rem;">🔁 Repeat every (HH:MM)</label>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <input class="inp" type="text" id="hRecurInterval" placeholder="e.g. 02:00" maxlength="5"
+            pattern="[0-9]{2}:[0-9]{2}"
+            style="flex:1;font-family:'JetBrains Mono',monospace;font-size:0.9rem;letter-spacing:0.06em;"
+            oninput="formatRecurInterval(this)">
+          <button type="button" class="btn btn-ghost btn-sm" style="border-radius:10px;flex-shrink:0"
+            onclick="document.getElementById('hRecurInterval').value='';document.getElementById('hRecurInterval').placeholder='e.g. 02:00'">Clear</button>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--muted);margin-top:5px;line-height:1.5">
+          A notification fires at this interval while the habit is unfinished.<br>e.g. "02:00" = nudge every 2 hours.
+        </div>
+      </div>
+
       <div class="form-field" style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
         <label class="form-label">🔔 Reminder Time (Optional)</label>
         <button class="time-dial-btn time-dial-btn--full" id="hReminderTimeBtn" onclick="openTimePicker('habit')">Set reminder time…</button>
@@ -5301,6 +5349,117 @@
       // account stats
       if (document.getElementById('acct-xp')) document.getElementById('acct-xp').textContent = xp;
       if (document.getElementById('acct-level')) document.getElementById('acct-level').textContent = lvl.level + ' – ' + lvl.name;
+    }
+
+    // ===== WEB NOTIFICATION HELPER (for in-browser / WebView) =====
+    const WebNotif = {
+      async requestPermission() {
+        if (!('Notification' in window)) return false;
+        if (Notification.permission === 'granted') return true;
+        if (Notification.permission === 'denied') return false;
+        const result = await Notification.requestPermission();
+        return result === 'granted';
+      },
+      send(title, body, tag) {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        try {
+          new Notification(title, {
+            body,
+            tag: tag || 'momentum',
+            icon: 'assets/logo.png',
+            badge: 'assets/logo.png',
+            requireInteraction: false,
+            silent: false
+          });
+        } catch (_) {}
+      }
+    };
+
+    // ===== BACKGROUND TIMER ENGINE =====
+    // Uses Page Visibility API to compensate for tab throttling when app is backgrounded.
+    // Stores the absolute end timestamp so even if JS is throttled, we stay accurate.
+    let _timerEndAt = null;        // absolute Date.now() when timer should end
+    let _timerBgHandle = null;     // setInterval handle for bg polling
+    let _wakeLock = null;          // Screen Wake Lock (keeps screen on during focus)
+
+    async function _acquireWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          _wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (_) {}
+    }
+
+    function _releaseWakeLock() {
+      try { if (_wakeLock) { _wakeLock.release(); _wakeLock = null; } } catch (_) {}
+    }
+
+    // Called when page becomes visible again — catches up any missed ticks
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && timerRunning && _timerEndAt) {
+        const remaining = Math.max(0, Math.round((_timerEndAt - Date.now()) / 1000));
+        if (remaining === 0) {
+          // Timer already expired while backgrounded
+          _onTimerComplete();
+        } else {
+          timerRemaining = remaining;
+          updateTimerDisplay();
+        }
+      }
+    });
+
+    function _startBgWatcher() {
+      clearInterval(_timerBgHandle);
+      _timerBgHandle = setInterval(() => {
+        if (!timerRunning || !_timerEndAt) { clearInterval(_timerBgHandle); return; }
+        const remaining = Math.max(0, Math.round((_timerEndAt - Date.now()) / 1000));
+        timerRemaining = remaining;
+        updateTimerDisplay();
+        if (remaining <= 0) {
+          clearInterval(_timerBgHandle);
+          _onTimerComplete();
+        }
+      }, 500); // poll every 500ms — accurate even when throttled
+    }
+
+    function _onTimerComplete() {
+      if (!timerRunning) return; // guard against double-fire
+      clearInterval(timerInterval);
+      clearInterval(_timerBgHandle);
+      timerRunning = false;
+      timerRedirectWarned = false;
+      _timerEndAt = null;
+      _releaseWakeLock();
+      lockTimerChips(false);
+      document.getElementById('timerLabel').textContent = '✓ session complete';
+      document.getElementById('timerStartBtn').textContent = 'Start';
+      showToast('🎯 Focus session complete!');
+
+      // Send Web Notification (visible even when app is backgrounded in WebView)
+      const name = DB.userName || 'Champ';
+      WebNotif.send(
+        '🎯 Focus session complete!',
+        name + ', your ' + timerStartMinutes + '-min session is done. Time to take a break. 💪'
+      );
+
+      const xpGain = timerStartMinutes;
+      document.getElementById('celebrationEmoji').textContent = '⏱';
+      document.getElementById('celebrationTitle').textContent = 'SESSION DONE';
+      document.getElementById('celebrationSub').textContent = timerStartMinutes + ' minutes of pure focus. 💪';
+      document.getElementById('celebrationXp').textContent = '+' + xpGain + ' XP';
+      const card = document.getElementById('celebrationCard');
+      card.classList.add('show');
+      confetti(window.innerWidth / 2, 200, 15);
+      clearTimeout(celebrationTimer);
+      celebrationTimer = setTimeout(() => card.classList.remove('show'), 2500);
+      addXP(xpGain);
+
+      const fs = DB.focusSessions;
+      fs.count++; fs.minutes += timerStartMinutes;
+      DB.focusSessions = fs;
+
+      // Auto-reset after 5s
+      setTimeout(() => { resetTimer(); }, 5000);
     }
 
     // ===== DARK MODE =====
@@ -6141,8 +6300,65 @@
       }
 
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      document.getElementById('view-' + id).classList.add('active');
+      const view = document.getElementById('view-' + id);
+      view.classList.add('active');
       currentTabId = id;
+
+      // JS-driven stagger: apply to every meaningful visible container in the view
+      // Targets: direct children + .widget, .card, .section-title, .account-section,
+      // .profile-hero, .overview-hero, .overview-grid, .ov-card, .tip-card, .stat-widget
+      const STAGGER_SELECTORS = [
+        ':scope > *',
+        ':scope .widget',
+        ':scope .account-section',
+        ':scope .overview-hero',
+        ':scope .overview-grid',
+        ':scope .ov-card',
+        ':scope .profile-hero',
+        ':scope .quote-block',
+        ':scope .quick-capture',
+        ':scope .add-form',
+        ':scope .filter-bar',
+        ':scope .cat-nav',
+        ':scope .note-editor',
+        ':scope details',
+      ].join(', ');
+
+      // Clean up any previous stagger classes
+      view.querySelectorAll('.stagger-item').forEach(el => {
+        el.classList.remove('stagger-item');
+        el.style.animationDelay = '';
+      });
+
+      // Collect all unique stagger targets, ordered top-to-bottom by their position
+      const seen = new Set();
+      const targets = [];
+      view.querySelectorAll(STAGGER_SELECTORS).forEach(el => {
+        if (!seen.has(el) && el !== view) {
+          seen.add(el);
+          targets.push(el);
+        }
+      });
+
+      // Sort by vertical position in DOM
+      targets.sort((a, b) => {
+        const ra = a.getBoundingClientRect();
+        const rb = b.getBoundingClientRect();
+        return ra.top - rb.top || a.compareDocumentPosition(b) - 2;
+      });
+
+      // Assign staggered delays: 35ms base step, cap at 380ms
+      const BASE = 0.03;
+      const STEP = 0.038;
+      const MAX = 0.38;
+      targets.forEach((el, i) => {
+        const delay = Math.min(BASE + i * STEP, MAX);
+        el.style.animationDelay = delay + 's';
+        el.classList.add('stagger-item');
+        // Remove class after animation so re-renders work
+        const dur = 280 + delay * 1000;
+        setTimeout(() => { el.classList.remove('stagger-item'); el.style.animationDelay = ''; }, dur + 50);
+      });
 
       // Re-lock timer chips if timer is still running after tab switch
       if (id === 'tasks' && timerRunning) {
@@ -6663,22 +6879,35 @@
     function toggleTimer() {
       if (timerRunning) {
         clearInterval(timerInterval);
+        clearInterval(_timerBgHandle);
         timerRunning = false;
         timerRedirectWarned = false;
+        _timerEndAt = null;
+        _releaseWakeLock();
         lockTimerChips(false);
         document.getElementById('timerStartBtn').textContent = 'Resume';
         document.getElementById('timerLabel').textContent = 'paused';
       } else {
+        // Request web notification permission when user starts timer
+        WebNotif.requestPermission();
+        _acquireWakeLock();
         timerRunning = true;
         timerRedirectWarned = false;
         lockTimerChips(true);
         document.getElementById('timerStartBtn').textContent = 'Pause';
         document.getElementById('timerLabel').textContent = 'focusing…';
+
+        // Set absolute end time for background accuracy
+        _timerEndAt = Date.now() + timerRemaining * 1000;
+
+        // Start background watcher (accurate even when throttled)
+        _startBgWatcher();
+
         timerInterval = setInterval(() => {
           timerRemaining--;
           updateTimerDisplay();
 
-          // Fix 8: redirect to tasks page when ≤5s remain and not already there
+          // Redirect to tasks page when ≤5s remain
           if (timerRemaining <= 5 && timerRemaining > 0 && !timerRedirectWarned) {
             timerRedirectWarned = true;
             const onTasksPage = document.getElementById('view-tasks').classList.contains('active');
@@ -6705,25 +6934,7 @@
 
           if (timerRemaining <= 0) {
             clearInterval(timerInterval);
-            timerRunning = false;
-            timerRedirectWarned = false;
-            lockTimerChips(false);
-            document.getElementById('timerLabel').textContent = '✓ session complete';
-            document.getElementById('timerStartBtn').textContent = 'Start';
-            showToast('🎯 Focus session complete!');
-            const xpGain = timerStartMinutes;
-            document.getElementById('celebrationEmoji').textContent = '⏱';
-            document.getElementById('celebrationTitle').textContent = 'SESSION DONE';
-            document.getElementById('celebrationSub').textContent = timerStartMinutes + ' minutes of pure focus. 💪';
-            document.getElementById('celebrationXp').textContent = '+' + xpGain + ' XP';
-            const card = document.getElementById('celebrationCard');
-            card.classList.add('show');
-            confetti(window.innerWidth / 2, 200, 15);
-            clearTimeout(celebrationTimer);
-            celebrationTimer = setTimeout(() => card.classList.remove('show'), 2500);
-            addXP(xpGain);
-            // Auto-reset timer after 5s
-            setTimeout(() => { resetTimer(); }, 5000);
+            _onTimerComplete();
           }
         }, 1000);
       }
@@ -6731,8 +6942,11 @@
 
     function resetTimer() {
       clearInterval(timerInterval);
+      clearInterval(_timerBgHandle);
       timerRunning = false;
       timerRedirectWarned = false;
+      _timerEndAt = null;
+      _releaseWakeLock();
       lockTimerChips(false);
       timerRemaining = timerTotal;
       document.getElementById('timerStartBtn').textContent = 'Start';
@@ -6885,6 +7099,7 @@
           document.getElementById('hFreq').value = h.freq;
           document.getElementById('hTarget').value = h.target || 1;
           document.getElementById('hReminderTime').value = h.reminderTime || '';
+          document.getElementById('hRecurInterval').value = h.recurInterval || '';
           selectedEmoji = h.icon; selectedColor = h.color;
           buildEmojiGrid(); buildColorGrid();
         }
@@ -6893,12 +7108,67 @@
         document.getElementById('hFreq').value = 'daily';
         document.getElementById('hTarget').value = '1';
         document.getElementById('hReminderTime').value = '';
+        document.getElementById('hRecurInterval').value = '';
         selectedEmoji = '🎯'; selectedColor = '#c0392b';
         buildEmojiGrid(); buildColorGrid();
       }
+      toggleRecurringField();
+      // Sync reminder time button label
+      const rt = document.getElementById('hReminderTime').value;
+      const rtBtn = document.getElementById('hReminderTimeBtn');
+      if (rt) { rtBtn.textContent = rt; rtBtn.classList.add('has-value'); }
+      else { rtBtn.textContent = 'Set reminder time…'; rtBtn.classList.remove('has-value'); }
       document.getElementById('habitModal').classList.add('open');
       setTimeout(() => document.getElementById('hName').focus(), 150);
     }
+    // Show/hide recurring interval field based on target value
+    function toggleRecurringField() {
+      const target = parseInt(document.getElementById('hTarget').value) || 1;
+      const field = document.getElementById('hRecurField');
+      if (field) field.style.display = target > 1 ? 'block' : 'none';
+    }
+
+    // Auto-format typed interval as HH:MM
+    function formatRecurInterval(input) {
+      let v = input.value.replace(/[^0-9]/g, '');
+      if (v.length > 4) v = v.slice(0, 4);
+      if (v.length >= 3) v = v.slice(0, 2) + ':' + v.slice(2);
+      input.value = v;
+    }
+
+    // ===== RECURRING HABIT INTERVAL NOTIFICATIONS =====
+    // Uses Web Notification API + setInterval for in-app recurring nudges
+    const _recurTimers = {}; // habitId → intervalId
+
+    function _scheduleRecurringHabitNotifs() {
+      // Cancel all existing recurring timers
+      Object.values(_recurTimers).forEach(id => clearInterval(id));
+      Object.keys(_recurTimers).forEach(k => delete _recurTimers[k]);
+
+      const td = todayKey ? todayKey() : today();
+
+      DB.habits.forEach(h => {
+        if (!h.recurInterval || !h.target || h.target <= 1) return;
+        const parts = h.recurInterval.split(':');
+        const hours = parseInt(parts[0]) || 0;
+        const mins = parseInt(parts[1]) || 0;
+        const intervalMs = (hours * 60 + mins) * 60 * 1000;
+        if (intervalMs < 60000) return; // minimum 1 minute
+
+        _recurTimers[h.id] = setInterval(() => {
+          // Only fire if habit not fully done today
+          const done = getHabitDoneCount ? getHabitDoneCount(h.id, todayKey()) : 0;
+          const target = h.target || 1;
+          if (done >= target) return;
+          WebNotif.send(
+            (h.icon || '🔁') + ' ' + h.name,
+            `${done}/${target} done — time for another rep! Keep the streak alive. 🔥`,
+            'recur-' + h.id
+          );
+        }, intervalMs);
+      });
+    }
+
     function closeHabitModal() { document.getElementById('habitModal').classList.remove('open'); }
     document.getElementById('habitModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeHabitModal(); });
 
@@ -6906,13 +7176,18 @@
       const name = document.getElementById('hName').value.trim();
       if (!name) { showToast('⚠ Enter a habit name'); return; }
       const habits = DB.habits;
+      const target = parseInt(document.getElementById('hTarget').value) || 1;
+      const recurRaw = document.getElementById('hRecurInterval').value.trim();
+      // Validate HH:MM format
+      const recurValid = /^\d{2}:\d{2}$/.test(recurRaw) && recurRaw !== '00:00';
       const data = {
         name,
         icon: selectedEmoji,
         color: selectedColor,
         freq: document.getElementById('hFreq').value,
-        target: parseInt(document.getElementById('hTarget').value) || 1,
-        reminderTime: document.getElementById('hReminderTime').value || null
+        target,
+        reminderTime: document.getElementById('hReminderTime').value || null,
+        recurInterval: (target > 1 && recurValid) ? recurRaw : null
       };
       if (editingHabitId) {
         const h = habits.find(x => x.id === editingHabitId);
@@ -6927,6 +7202,7 @@
       renderOverview();
       updateHeaderStats();
       Notifs.scheduleAll();
+      _scheduleRecurringHabitNotifs();
       showToast(editingHabitId ? '✓ Habit updated' : '✓ Habit created · +10 XP');
     }
 
@@ -7110,7 +7386,7 @@
         <div class="habit-icon" style="background:${h.color}22">${h.icon}</div>
         <div class="habit-info">
           <div class="habit-name">${escHtml(h.name)}</div>
-          <div class="habit-freq">${h.freq}${target > 1 ? ' · ' + target + '× per day' : ''}</div>
+          <div class="habit-freq">${h.freq}${target > 1 ? ' · ' + target + '× per day' : ''}${h.recurInterval ? ' · 🔁 every ' + h.recurInterval : ''}</div>
         </div>
         <div style="text-align:right">
           <div class="habit-streak">${streak}</div>
@@ -7915,6 +8191,8 @@
       injectQuickCapture();
       updateNotificationsUI();
       setupNotifChannel().then(() => Notifs.scheduleAll());
+      // Start recurring interval notifs for habits that have them
+      setTimeout(_scheduleRecurringHabitNotifs, 500);
       // Show onboarding IMMEDIATELY — before idle tasks — so there's no flash of homescreen
       if (!DB.onboardingDone) {
         renderOnboarding(); // show at once, synchronously
